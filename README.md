@@ -7,7 +7,7 @@ Usage: This is a unitypackage which can be imported into your Unity project. Dra
 
 SpacebrewClient: This is where you configure your Spacebrew client to point to your desired server and setup your publishers and subscribers.
 
-![Alt text](/screenshots/Capture.png "Spacebrew Client")
+![Alt text](/screenshots/Capture.PNG "Spacebrew Client")
 
 SpacebrewEvents: This is what you attach to your game object to have it send and receive Spacebrew events.
 
