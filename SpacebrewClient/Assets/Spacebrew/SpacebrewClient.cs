@@ -73,7 +73,7 @@ public class SpacebrewClient : MonoBehaviour {
 			cMsg.type = N["message"]["type"];
 			cMsg.value = N["message"]["value"];
 			cMsg.clientName = N["message"]["clientName"];
-		
+
 			print (cMsg);
 			spacebrewMsgs.Add(cMsg);
 			//ProcessSpacebrewMessage(cMsg);
@@ -84,7 +84,7 @@ public class SpacebrewClient : MonoBehaviour {
 //				print (e.Data);
 //				return;
 //			}
-//			
+//
 //			if (e.Type == Opcode.Binary) {
 //				// Do something with e.RawData
 //				return;
@@ -122,20 +122,20 @@ public class SpacebrewClient : MonoBehaviour {
 //		}
 		//publishers.Add(P);
 	}
-	
+
 	void addSubscriber(string _name, string _type) {
 		var S = new JSONClass();
 		S ["name"] = _name;
 		S ["type"] = _type;
 		//subscribers.Add(S);
 	}
-	
+
 	private JSONClass makeConfig() {
 		// Begin the JSON config
 		var I = new JSONClass();
 		I["name"] = clientName;
 		I["description"] = descriptionText;
-		
+
 		// Add all the publishers
 		print ("there are " + publishers.Length);
 		for (int i = 0; i < publishers.Length; i++) // Loop through List with for
@@ -158,7 +158,7 @@ public class SpacebrewClient : MonoBehaviour {
 			O["default"] = "";
 			I["publish"] ["messages"][-1] = O;
 		}
-		
+
 		// Add all the subscribers
 		for (int i = 0; i < subscribers.Length; i++) // Loop through List with for
 		{
@@ -180,24 +180,24 @@ public class SpacebrewClient : MonoBehaviour {
 			I["subscribe"] ["messages"][-1] = Q;
 		}
 
-		
+
 		// Add everything to config
 		var C = new JSONClass();
 		C ["config"] = I;
-		
+
 		print("Connection:");
 		print(C.ToString());
 		print("");
-		
+
 		return C;
 	}
-	
+
 	void onOpen() {
-		
+
 	}
-	
+
 	void onClose() {
-		
+
 	}
 
 	public void addEventListener(GameObject _sbGo, string _event) {
@@ -219,7 +219,7 @@ public class SpacebrewClient : MonoBehaviour {
 		MS ["message"] = M;
 		conn.Send(MS.ToString());
 		//        conn.Send (makeConfig().ToString());
-		
+
 		//       {
 		//         "message":{
 		//           "clientName":"CLIENT NAME (Must match the name in the config statement)",
@@ -228,7 +228,7 @@ public class SpacebrewClient : MonoBehaviour {
 		//           "value":"VALUE",
 		//       }
 		//   }
-		
+
 	}
 
 	void ProcessSpacebrewMessage(SpacebrewMessage _cMsg) {
@@ -256,14 +256,14 @@ public class SpacebrewClient : MonoBehaviour {
 				print ("do something");
 					//pillVisible = !pillVisible;
 				}
-			}		
+			}
 	}
 
 	// Use this for initialization
 	void Start () {
-		
+
 	}
-	
+
 	// Update is called once per frame
 	void Update () {
 
@@ -273,7 +273,7 @@ public class SpacebrewClient : MonoBehaviour {
 			//This will now work because you've constrained the generic type V
 			//print(element.sbEvent);
 			//if (_cMsg.name == element.sbEvent) {
-				
+
 				// if this element subscribes to this event then call it's callback
 				//element.eventCallback
 				//element.sbGo.OnSpacebrewEvent(_cMsg);
@@ -294,6 +294,32 @@ public class SpacebrewClient : MonoBehaviour {
 			//sendMessage();
 		}
 		//GameObject.Find("pill").renderer.enabled = pillVisible;
+
+		//check to see if connection has died, connect if so
+		if (conn.ReadyState != WebSocketState.OPEN && !attemptingReconnect ){
+			StartCoroutine( "AttemptWebsocketReconnect" );
+		}
+	}
+
+	private IEnumerator AttemptWebsocketReconnect(){
+		attemptingReconnect = true;
+
+		float timer = 0.1f;
+		float maxInterval = 3.0f;
+		while (conn.ReadyState != WebSocketState.OPEN)
+        {
+            Debug.LogWarning("Attempting to Reconnect");
+            conn.ConnectAsync ();
+			yield return new WaitForSeconds (timer);
+			if (timer < maxInterval) {
+				timer *= 2.0f; // exponential backoff
+			} else {
+				timer = maxInterval;
+			}
+		}
+		conn.Send (makeConfig().ToString());
+
+		attemptingReconnect = false;
 	}
 }
-		
+
