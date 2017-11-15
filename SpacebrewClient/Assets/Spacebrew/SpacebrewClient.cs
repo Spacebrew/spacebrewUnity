@@ -57,6 +57,8 @@ public class SpacebrewClient : MonoBehaviour {
 	List<SpacebrewEvent> spacebrewEvents = new List<SpacebrewEvent>();
 	List<SpacebrewMessage> spacebrewMsgs = new List<SpacebrewMessage>();
 
+    private bool attemptingReconnect;
+
 	void Awake() {
 		conn = new WebSocket (serverAddress); // removed WebSocket on begin
 		conn.OnOpen += (sender, e) => {
