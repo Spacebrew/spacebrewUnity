@@ -5,39 +5,73 @@ using WebSocketSharp;
 using SimpleJSON;
 using System;
 using System.Reflection;
+using UnityEngine.Events;
 
 public class SpacebrewClient : MonoBehaviour {
 
+    public enum type
+    {
+        BOOLEAN = 0,
+        STRING = 1,
+        RANGE = 2,
+        CUSTOM = 3
+    }
+
+    [Serializable]
+    public class SpacebrewMessageEvent : UnityEvent<SpacebrewClient.SpacebrewMessage> { }
+
 	[Serializable]
 	public class Publisher
-		{
-			public string name;
-			public enum type{
-				BOOLEAN = 0,
-				STRING = 1,
-				RANGE = 2
-			};
-			public type pubType;
-			//public string defaultValue;
-		}
+	{
+		public string name;
+        public type pubType;
+        public string customType;
+        //public string defaultValue;
+
+        private string _typeString;
+
+        public string typeString
+        {
+            get
+            {
+                if (_typeString == null)
+                {
+                    _typeString = TypeToString(pubType, customType);
+                }
+                return _typeString;
+            }
+        }
+    }
 
 	[Serializable]
 	public class Subscriber
 	{
 		public string name;
-		public enum type{
-			BOOLEAN = 0,
-			STRING = 1,
-			RANGE = 2
-		};
 		public type subType;
-	}
+        public string customType;
+        public SpacebrewMessageEvent onReceived;
+        
+        private string _typeString;
 
+        public string typeString
+        {
+            get
+            {
+                if (_typeString == null)
+                {
+                    _typeString = TypeToString(subType, customType);
+                }
+                return _typeString;
+            }
+        }
+    }
+    
 	public class SpacebrewMessage
 	{
 		public string name;
 		public string type;
 		public string value;
+        public JSONNode valueNode;
 		public string clientName;
 	}
 
@@ -48,75 +82,123 @@ public class SpacebrewClient : MonoBehaviour {
 	}
 
 	public WebSocket conn;
+    public bool autoconnect = false;
 	public string serverAddress; // you can include the port number so ws://192.168.7.2:9000
 	public Publisher[] publishers;
 	public Subscriber[] subscribers;
 	public string clientName;
 	public string descriptionText;
 	public ArrayList SpacebrewEvents;
-	List<SpacebrewEvent> spacebrewEvents = new List<SpacebrewEvent>();
 	List<SpacebrewMessage> spacebrewMsgs = new List<SpacebrewMessage>();
 
     private bool attemptingReconnect;
+    
+    private static string TypeToString(type type, string customType)
+    {
+        switch (type)
+        {
+            case type.BOOLEAN:
+                return "boolean";
+            case type.STRING:
+                return "string";
+            case type.RANGE:
+                return "range";
+            case type.CUSTOM:
+                if (string.IsNullOrEmpty(customType))
+                {
+                    Debug.LogWarning("[Subscriber.typeString] "
+                        + "\"Custom Type\" field must be filled in "
+                        + "when CUSTOM is selected from type list");
+                    return "";
+                }
+                else
+                {
+                    return customType;
+                }
+            default:
+                Debug.LogWarning("[Subscriber.typeString] "
+                    + "unrecognized type: " + type);
+                return "";
+        }
+    }
 
-	void Awake() {
-		conn = new WebSocket (serverAddress); // removed WebSocket on begin
-		conn.OnOpen += (sender, e) => {
-						print ("Attempting to open socket");
-				};
-
-		conn.OnMessage += (sender, e) => {
-			print (e.Data);
-
-			// parse the incoming json message from spacebrew
-			var N = JSON.Parse(e.Data);
-			var cMsg = new SpacebrewMessage();
-			cMsg.name = N["message"]["name"];
-			cMsg.type = N["message"]["type"];
-			cMsg.value = N["message"]["value"];
-			cMsg.clientName = N["message"]["clientName"];
-
-			print (cMsg);
-			spacebrewMsgs.Add(cMsg);
-			//ProcessSpacebrewMessage(cMsg);
-
-//			if (e.Type == Opcode.Text) {
-//				// Do something with e.Data
-//				print (e);
-//				print (e.Data);
-//				return;
-//			}
-//
-//			if (e.Type == Opcode.Binary) {
-//				// Do something with e.RawData
-//				return;
-//			}
-
-		};
-
-		conn.OnError += (sender, e) => {
-			print ("THERE WAS AN ERROR CONNECTING");
-			print (e.Message);
-		};
-
-		conn.OnClose += (sender, e) => {
-			print ("Connection closed");
-		};
-
-		print ("Attemping to connect to " + serverAddress);
-		conn.Connect ();
-
-		//addPublisher ("power", "boolean", "0");
-		//addSubscriber ("hits", "boolean");
-
-		// Connect and send the configuration for the app to Spacebrew
-		conn.Send (makeConfig().ToString());
+    void Awake() {
+        if (autoconnect)
+        {
+            Connect();
+        }
 	}
+
+    public void Connect()
+    {
+        if (conn == null)
+        {
+            conn = new WebSocket(serverAddress); // removed WebSocket on begin
+            conn.OnOpen += (sender, e) =>
+            {
+                print("Attempting to open socket");
+            };
+
+            conn.OnMessage += (sender, e) =>
+            {
+                print(e.Data);
+
+                // parse the incoming json message from spacebrew
+                var N = JSON.Parse(e.Data);
+                var cMsg = new SpacebrewMessage();
+                cMsg.name = N["message"]["name"];
+                cMsg.type = N["message"]["type"];
+                cMsg.value = N["message"]["value"];
+                cMsg.valueNode = N["message"]["value"];
+                cMsg.clientName = N["message"]["clientName"];
+
+                print(cMsg);
+                spacebrewMsgs.Add(cMsg);
+                //ProcessSpacebrewMessage(cMsg);
+
+                //			if (e.Type == Opcode.Text) {
+                //				// Do something with e.Data
+                //				print (e);
+                //				print (e.Data);
+                //				return;
+                //			}
+                //
+                //			if (e.Type == Opcode.Binary) {
+                //				// Do something with e.RawData
+                //				return;
+                //			}
+
+            };
+
+            conn.OnError += (sender, e) =>
+            {
+                print("THERE WAS AN ERROR CONNECTING");
+                print(e.Message);
+            };
+
+            conn.OnClose += (sender, e) =>
+            {
+                print("Connection closed");
+            };
+
+            print("Attemping to connect to " + serverAddress);
+            conn.Connect();
+
+            //addPublisher ("power", "boolean", "0");
+            //addSubscriber ("hits", "boolean");
+
+            // Connect and send the configuration for the app to Spacebrew
+            if (conn.ReadyState == WebSocketState.Open)
+            {
+                conn.Send(makeConfig().ToString());
+            }
+        }
+    }
 
 	// You can use these to programatically add publisher and subsribers
 	// otherwise you should do it through the editor interface.
 	void addPublisher(string _name, string _type, string _default) {
-		var P = new JSONClass();
+		var P = new JSONObject();
 		P ["name"] = _name;
 		P ["type"] = _type;
 //		if (_default != "") {
@@ -126,15 +208,49 @@ public class SpacebrewClient : MonoBehaviour {
 	}
 
 	void addSubscriber(string _name, string _type) {
-		var S = new JSONClass();
+		var S = new JSONObject();
 		S ["name"] = _name;
 		S ["type"] = _type;
 		//subscribers.Add(S);
 	}
 
-	private JSONClass makeConfig() {
+    private Subscriber GetSubscriber(string name, string type)
+    {
+        for (int i = subscribers.Length - 1; i >= 0; i--)
+        {
+            if (subscribers[i].name == name && subscribers[i].typeString == type)
+            {
+                return subscribers[i];
+            }
+        }
+        return null;
+    }
+
+    public void AddListenerTo(string name, string type, UnityAction<SpacebrewMessage> callback)
+    {
+        Subscriber sub = GetSubscriber(name, type);
+        if (sub != null)
+        {
+            Debug.Log("[SpacebrewClient.AddListenerTo] adding listener to " + name + ", " + type);
+            sub.onReceived.AddListener(callback);
+        } else
+        {
+            Debug.LogWarning("[SpacebrewClient.AddListenerTo] Did not find " + name + ", " + type);
+        }
+    }
+
+    public void RemoveListenerFrom(string name, string type, UnityAction<SpacebrewMessage> callback)
+    {
+        Subscriber sub = GetSubscriber(name, type);
+        if (sub != null)
+        {
+            sub.onReceived.RemoveListener(callback);
+        }
+    }
+
+	private JSONObject makeConfig() {
 		// Begin the JSON config
-		var I = new JSONClass();
+		var I = new JSONObject();
 		I["name"] = clientName;
 		I["description"] = descriptionText;
 
@@ -142,49 +258,39 @@ public class SpacebrewClient : MonoBehaviour {
 		print ("there are " + publishers.Length);
 		for (int i = 0; i < publishers.Length; i++) // Loop through List with for
 		{
-			var O = new JSONClass();
-			O["name"] = publishers[i].name;
-			string tType = "empty";
-			switch ((int)publishers[i].pubType) {
-			case 0:
-				tType = "boolean";
-				break;
-			case 1:
-				tType = "string";
-				break;
-			case 2:
-				tType = "range";
-				break;
-			}
-			O["type"] = tType;
-			O["default"] = "";
-			I["publish"] ["messages"][-1] = O;
+            if (string.IsNullOrEmpty(publishers[i].typeString))
+            {
+                continue;
+            }
+            else
+            {
+                var O = new JSONObject();
+                O["name"] = publishers[i].name;
+                O["type"] = publishers[i].typeString;
+                O["default"] = "";
+                I["publish"]["messages"][-1] = O;
+            }
 		}
 
 		// Add all the subscribers
 		for (int i = 0; i < subscribers.Length; i++) // Loop through List with for
 		{
-			var Q = new JSONClass();
-			Q["name"] = subscribers[i].name;
-			string tType = "empty";
-			switch ((int)subscribers[i].subType) {
-			case 0:
-				tType = "boolean";
-				break;
-			case 1:
-				tType = "string";
-				break;
-			case 2:
-				tType = "range";
-				break;
-			}
-			Q["type"] = tType;
-			I["subscribe"] ["messages"][-1] = Q;
+            if (string.IsNullOrEmpty(subscribers[i].typeString))
+            {
+                continue;
+            }
+            else
+            {
+                var Q = new JSONObject();
+                Q["name"] = subscribers[i].name;
+                Q["type"] = subscribers[i].typeString;
+                I["subscribe"]["messages"][-1] = Q;
+            }
 		}
 
 
 		// Add everything to config
-		var C = new JSONClass();
+		var C = new JSONObject();
 		C ["config"] = I;
 
 		print("Connection:");
@@ -202,22 +308,58 @@ public class SpacebrewClient : MonoBehaviour {
 
 	}
 
-	public void addEventListener(GameObject _sbGo, string _event) {
-		print ("Adding a listener for " + _event);
-		SpacebrewEvent evt = new SpacebrewEvent();
-		evt.sbGo = _sbGo;
-		evt.sbEvent = _event;
-		spacebrewEvents.Add(evt);
-	}
+    public void sendMessage(string _name, string _type, object _value)
+    {
+        string valueText = JsonUtility.ToJson(_value);
+        JSONNode valueNode = JSON.Parse(valueText);
+        sendMessage(_name, _type, valueNode);
+    }
 
-	public void sendMessage(string _name, string _type, string _value) {
-		var M = new JSONClass();
+    public void sendMessage(string _name, string _type, JSONNode _value)
+    {
+        var M = new JSONObject();
+        M["clientName"] = clientName;
+        M["name"] = _name;
+        M["type"] = _type;
+        M["value"] = _value;
+
+        var MS = new JSONObject();
+        MS["message"] = M;
+        conn.Send(MS.ToString());
+    }
+
+    public void sendMessage(string _name, bool _value)
+    {
+        var M = new JSONObject();
+        M["clientName"] = clientName;
+        M["name"] = _name;
+        M["type"] = "boolean";
+        M["value"] = _value;
+
+        var MS = new JSONObject();
+        MS["message"] = M;
+        conn.Send(MS.ToString());
+        //        conn.Send (makeConfig().ToString());
+
+        //       {
+        //         "message":{
+        //           "clientName":"CLIENT NAME (Must match the name in the config statement)",
+        //           "name":"PUBLISHER NAME (outgoing messages), SUBSCRIBER NAME (incoming messages)",
+        //           "type":"DATA TYPE",
+        //           "value":"VALUE",
+        //       }
+        //   }
+
+    }
+
+    public void sendMessage(string _name, string _type, string _value) {
+		var M = new JSONObject();
 		M["clientName"] = clientName;
 		M["name"] = _name;
 		M["type"] = _type;
 		M["value"] = _value;
 
-		var MS = new JSONClass ();
+		var MS = new JSONObject ();
 		MS ["message"] = M;
 		conn.Send(MS.ToString());
 		//        conn.Send (makeConfig().ToString());
@@ -233,34 +375,6 @@ public class SpacebrewClient : MonoBehaviour {
 
 	}
 
-	void ProcessSpacebrewMessage(SpacebrewMessage _cMsg) {
-//		foreach (SpacebrewEvent element in spacebrewEvents)
-//		{
-//			//This will now work because you've constrained the generic type V
-//			print(element.sbEvent);
-//			if (_cMsg.name == element.sbEvent) {
-//
-//				// if this element subscribes to this event then call it's callback
-//				//element.eventCallback
-//				//element.sbGo.OnSpacebrewEvent(_cMsg);
-//				element.sbGo.SendMessage("OnSpacebrewEvent", _cMsg);
-//				//this.GetComponent<SpacebrewEvents>().OnSpacebrewEvent(_cMsg);
-//				//this.GetComponent<MyScript>().MyFunction();
-//				//print(element.sbGo);
-//				//element.sbGo.gameObject.SpacebrewEvent(_cMsg);
-//				//element.sbGo.
-////				MethodInfo mi = element.sbGo.GetType().GetMethod(element.eventCallback);
-//				//mi.Invoke(element.sbGo, null);
-//			}
-//		}
-		if (_cMsg.name == "hits") {
-			if (_cMsg.value == "true"){
-				print ("do something");
-					//pillVisible = !pillVisible;
-				}
-			}
-	}
-
 	// Use this for initialization
 	void Start () {
 
@@ -272,33 +386,22 @@ public class SpacebrewClient : MonoBehaviour {
 		// go through new messages
 		foreach (SpacebrewMessage element in spacebrewMsgs)
 		{
-			//This will now work because you've constrained the generic type V
-			//print(element.sbEvent);
-			//if (_cMsg.name == element.sbEvent) {
-
-				// if this element subscribes to this event then call it's callback
-				//element.eventCallback
-				//element.sbGo.OnSpacebrewEvent(_cMsg);
-				//element.sbGo.SendMessage("OnSpacebrewEvent", _cMsg);
-				this.GetComponent<SpacebrewEvents>().OnSpacebrewEvent(element);
-				//this.GetComponent<MyScript>().MyFunction();
-				//print(element.sbGo);
-				//element.sbGo.gameObject.SpacebrewEvent(_cMsg);
-				//element.sbGo.
-				//				MethodInfo mi = element.sbGo.GetType().GetMethod(element.eventCallback);
-				//mi.Invoke(element.sbGo, null);
-			//}
+            try
+            {
+                Subscriber sub = GetSubscriber(element.name, element.type);
+                if (sub != null)
+                {
+                    sub.onReceived.Invoke(element);
+                }
+            } catch (Exception e)
+            {
+                Debug.LogError("[SpacebrewClient.Update] exception while processing Spacebrew message: " + e.Message + " " + e.StackTrace);
+            }
 		}
 		spacebrewMsgs.Clear();
-
-		if (Input.GetKeyDown ("space")) {
-			print ("Sending Spacebrew Message");
-			//sendMessage();
-		}
-		//GameObject.Find("pill").renderer.enabled = pillVisible;
-
+        
 		//check to see if connection has died, connect if so
-		if (conn.ReadyState != WebSocketState.OPEN && !attemptingReconnect ){
+		if (conn != null && conn.ReadyState != WebSocketState.Open && !attemptingReconnect ){
 			StartCoroutine( "AttemptWebsocketReconnect" );
 		}
 	}
@@ -308,7 +411,7 @@ public class SpacebrewClient : MonoBehaviour {
 
 		float timer = 0.1f;
 		float maxInterval = 3.0f;
-		while (conn.ReadyState != WebSocketState.OPEN)
+		while (conn.ReadyState != WebSocketState.Open)
         {
             Debug.LogWarning("Attempting to Reconnect");
             conn.ConnectAsync ();
@@ -322,6 +425,14 @@ public class SpacebrewClient : MonoBehaviour {
 		conn.Send (makeConfig().ToString());
 
 		attemptingReconnect = false;
-	}
+    }
+
+    private void OnDestroy()
+    {
+        if (conn != null)
+        {
+            conn.CloseAsync();
+        }
+    }
 }
 
