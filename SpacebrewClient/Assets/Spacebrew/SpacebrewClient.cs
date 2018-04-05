@@ -82,6 +82,7 @@ public class SpacebrewClient : MonoBehaviour {
 	}
 
 	public WebSocket conn;
+    public bool logIncoming = false;
     public bool autoconnect = false;
 	public string serverAddress; // you can include the port number so ws://192.168.7.2:9000
 	public Publisher[] publishers;
@@ -89,7 +90,7 @@ public class SpacebrewClient : MonoBehaviour {
 	public string clientName;
 	public string descriptionText;
 	public ArrayList SpacebrewEvents;
-	List<SpacebrewMessage> spacebrewMsgs = new List<SpacebrewMessage>();
+	Queue<SpacebrewMessage> spacebrewMsgs = new Queue<SpacebrewMessage>();
 
     private bool attemptingReconnect;
     
@@ -136,15 +137,18 @@ public class SpacebrewClient : MonoBehaviour {
             conn = new WebSocket(serverAddress); // removed WebSocket on begin
             conn.OnOpen += (sender, e) =>
             {
-                print("Attempting to open socket");
+                Debug.Log("Attempting to open socket");
             };
 
             conn.OnMessage += (sender, e) =>
             {
-                print(e.Data);
+                if (logIncoming)
+                {
+                    Debug.Log(e.Data);
+                }
 
-                // parse the incoming json message from spacebrew
-                var N = JSON.Parse(e.Data);
+              // parse the incoming json message from spacebrew
+              var N = JSON.Parse(e.Data);
                 var cMsg = new SpacebrewMessage();
                 cMsg.name = N["message"]["name"];
                 cMsg.type = N["message"]["type"];
@@ -152,8 +156,7 @@ public class SpacebrewClient : MonoBehaviour {
                 cMsg.valueNode = N["message"]["value"];
                 cMsg.clientName = N["message"]["clientName"];
 
-                print(cMsg);
-                spacebrewMsgs.Add(cMsg);
+                spacebrewMsgs.Enqueue(cMsg);
                 //ProcessSpacebrewMessage(cMsg);
 
                 //			if (e.Type == Opcode.Text) {
@@ -172,16 +175,17 @@ public class SpacebrewClient : MonoBehaviour {
 
             conn.OnError += (sender, e) =>
             {
-                print("THERE WAS AN ERROR CONNECTING");
-                print(e.Message);
+                Debug.LogWarningFormat(
+                    "THERE WAS AN ERROR CONNECTING {0}", 
+                    e.Message);
             };
 
             conn.OnClose += (sender, e) =>
             {
-                print("Connection closed");
+                Debug.Log("Connection closed");
             };
 
-            print("Attemping to connect to " + serverAddress);
+            Debug.Log("Attemping to connect to " + serverAddress);
             conn.Connect();
 
             //addPublisher ("power", "boolean", "0");
@@ -255,7 +259,6 @@ public class SpacebrewClient : MonoBehaviour {
 		I["description"] = descriptionText;
 
 		// Add all the publishers
-		print ("there are " + publishers.Length);
 		for (int i = 0; i < publishers.Length; i++) // Loop through List with for
 		{
             if (string.IsNullOrEmpty(publishers[i].typeString))
@@ -293,9 +296,7 @@ public class SpacebrewClient : MonoBehaviour {
 		var C = new JSONObject();
 		C ["config"] = I;
 
-		print("Connection:");
-		print(C.ToString());
-		print("");
+        Debug.LogFormat("Connection:{0}", C.ToString());
 
 		return C;
 	}
@@ -384,8 +385,9 @@ public class SpacebrewClient : MonoBehaviour {
 	void Update () {
 
 		// go through new messages
-		foreach (SpacebrewMessage element in spacebrewMsgs)
+        while(spacebrewMsgs.Count != 0)
 		{
+            SpacebrewMessage element = spacebrewMsgs.Dequeue();
             try
             {
                 Subscriber sub = GetSubscriber(element.name, element.type);
@@ -398,7 +400,6 @@ public class SpacebrewClient : MonoBehaviour {
                 Debug.LogError("[SpacebrewClient.Update] exception while processing Spacebrew message: " + e.Message + " " + e.StackTrace);
             }
 		}
-		spacebrewMsgs.Clear();
         
 		//check to see if connection has died, connect if so
 		if (conn != null && conn.ReadyState != WebSocketState.Open && !attemptingReconnect ){
