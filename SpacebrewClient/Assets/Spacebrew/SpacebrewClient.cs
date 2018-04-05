@@ -82,7 +82,7 @@ public class SpacebrewClient : MonoBehaviour {
 	}
 
 	public WebSocket conn;
-    public bool logIncoming = false;
+    public bool debugLogging = false;
     public bool autoconnect = false;
 	public string serverAddress; // you can include the port number so ws://192.168.7.2:9000
 	public Publisher[] publishers;
@@ -137,12 +137,15 @@ public class SpacebrewClient : MonoBehaviour {
             conn = new WebSocket(serverAddress); // removed WebSocket on begin
             conn.OnOpen += (sender, e) =>
             {
-                Debug.Log("Attempting to open socket");
+                if (debugLogging)
+                {
+                    Debug.Log("Attempting to open socket");
+                }
             };
 
             conn.OnMessage += (sender, e) =>
             {
-                if (logIncoming)
+                if (debugLogging)
                 {
                     Debug.Log(e.Data);
                 }
@@ -185,8 +188,11 @@ public class SpacebrewClient : MonoBehaviour {
                 Debug.Log("Connection closed");
             };
 
-            Debug.Log("Attemping to connect to " + serverAddress);
-            conn.Connect();
+      if (debugLogging)
+      {
+        Debug.Log("Attemping to connect to " + serverAddress);
+      }
+      conn.Connect();
 
             //addPublisher ("power", "boolean", "0");
             //addSubscriber ("hits", "boolean");
@@ -235,11 +241,13 @@ public class SpacebrewClient : MonoBehaviour {
         Subscriber sub = GetSubscriber(name, type);
         if (sub != null)
         {
-            Debug.Log("[SpacebrewClient.AddListenerTo] adding listener to " + name + ", " + type);
             sub.onReceived.AddListener(callback);
         } else
         {
-            Debug.LogWarning("[SpacebrewClient.AddListenerTo] Did not find " + name + ", " + type);
+            Debug.LogWarningFormat(
+                "[SpacebrewClient.AddListenerTo] Did not find {0}, {1}",
+                name,
+                type);
         }
     }
 
@@ -296,9 +304,12 @@ public class SpacebrewClient : MonoBehaviour {
 		var C = new JSONObject();
 		C ["config"] = I;
 
-        Debug.LogFormat("Connection:{0}", C.ToString());
+        if (debugLogging)
+        {
+            Debug.LogFormat("Connection: {0}", C.ToString());
+        }
 
-		return C;
+        return C;
 	}
 
 	void onOpen() {

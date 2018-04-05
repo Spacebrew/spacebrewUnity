@@ -286,6 +286,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed51d215ab7bf0440a7d1691b31f399a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  debugLogging: 1
   autoconnect: 1
   serverAddress: ws://sandbox.spacebrew.cc:9000/
   publishers:
