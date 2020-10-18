@@ -17,7 +17,7 @@ class Test_CSharp : MonoBehaviour
         var N = JSONNode.Parse("{\"name\":\"test\", \"array\":[1,{\"data\":\"value\"}]}");
         N["array"][1]["Foo"] = "Bar";
         P("'nice formatted' string representation of the JSON tree:");
-        P(N.ToString(""));
+        P(N.ToString());
         P("");
 
         P("'normal' string representation of the JSON tree:");
@@ -29,7 +29,7 @@ class Test_CSharp : MonoBehaviour
         P("");
 
         P("content of member 'array':");
-        P(N["array"].ToString(""));
+        P(N["array"].ToString());
         P("");
 
         P("first element of member 'array': " + N["array"][0]);
@@ -43,21 +43,21 @@ class Test_CSharp : MonoBehaviour
         P("N[\"array\"][1][\"data\"] == " + N["array"][1]["data"]);
         P("");
 
-        var data = N.SaveToBase64();
-        var data2 = N.SaveToCompressedBase64();
-        N = null;
-        P("Serialized to Base64 string:");
-        P(data);
-        P("Serialized to Base64 string (compressed):");
-        P(data2);
-        P("");
+        //var data = N.SaveToBase64();
+        //var data2 = N.SaveToCompressedBase64();
+        //N = null;
+        //P("Serialized to Base64 string:");
+        //P(data);
+        //P("Serialized to Base64 string (compressed):");
+        //P(data2);
+        //P("");
 
-        N = JSONNode.LoadFromBase64(data);
-        P("Deserialized from Base64 string:");
-        P(N.ToString());
-        P("");
+        //N = JSONNode.LoadFromBase64(data);
+        //P("Deserialized from Base64 string:");
+        //P(N.ToString());
+        //P("");
 
-        var I = new JSONClass();
+        var I = new JSONObject();
         I["version"].AsInt = 5;
         I["author"]["name"] = "Bunny83";
         I["author"]["phone"] = "0123456789";
