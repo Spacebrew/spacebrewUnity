@@ -111,7 +111,7 @@ public class SpacebrewClient : MonoBehaviour {
 		//addSubscriber ("hits", "boolean");
 
 		// Connect and send the configuration for the app to Spacebrew
-		conn.Send (makeConfig().ToString());
+		conn.Send (makeConfig());
 	}
 
 	// You can use these to programatically add publisher and subsribers
@@ -193,7 +193,7 @@ public class SpacebrewClient : MonoBehaviour {
 		print(C.ToString());
 		print("");
 		
-		return C;
+		return C.ToString();
 	}
 	
 	void onOpen() {
@@ -284,7 +284,7 @@ public class SpacebrewClient : MonoBehaviour {
 				//element.sbGo.SendMessage("OnSpacebrewEvent", _cMsg);
 
 				// TODO this causes errors
-				//this.GetComponent<SpacebrewEvents>().OnSpacebrewEvent(element);
+				this.GetComponent<SpacebrewEvents>().OnSpacebrewEvent(element);
 
 				//this.GetComponent<MyScript>().MyFunction();
 				//print(element.sbGo);
