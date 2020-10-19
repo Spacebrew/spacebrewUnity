@@ -1,12 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class SpacebrewEvents : MonoBehaviour {
 
 	SpacebrewClient sbClient;
 
 	// Use this for initialization
-	void Start () {
+	public void Start () {
 		GameObject go = GameObject.Find ("SpacebrewObject"); // the name of your client object
 		sbClient = go.GetComponent <SpacebrewClient> ();
 
@@ -16,7 +17,7 @@ public class SpacebrewEvents : MonoBehaviour {
 	}
 
 	// Update is called once per frame
-	void Update () {
+	public void Update () {
 		if (Input.GetKeyDown ("space")) {
 			print ("Sending Spacebrew Message");
 			// name, type, value

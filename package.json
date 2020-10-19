@@ -1,0 +1,19 @@
+{
+  "name": "spacebrew.client",
+  "displayName": "Spacebrew Client",
+  "version": "0.0.2",
+  "unity": "2019.4",
+  "description": "A Spacebrew client library for Unity3D.",
+  "author": {
+    "name": "Spacebrew Team",
+    "email": "",
+    "url": "https://github.com/Spacebrew/spacebrewUnity"
+  },
+  "keywords": [
+    "Spacebrew"
+  ],
+  "samples": [
+  ],
+  "dependencies": {
+  }
+}
