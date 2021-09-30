@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿#if UNITY_EDITOR
+
+using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using Spacebrew.Runtime;
@@ -87,3 +89,4 @@ public class SBCustomTypePropertyDrawer : PropertyDrawer
         return enabled;
     }
 }
+#endif
