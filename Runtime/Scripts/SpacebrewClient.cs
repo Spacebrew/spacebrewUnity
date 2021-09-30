@@ -26,7 +26,9 @@ public class SpacebrewClient : MonoBehaviour
     {
         public string name;
         public type pubType;
+#if UNITY_EDITOR
         [SBCustomType("pubType", false)]
+#endif
         public string customType;
         //public string defaultValue;
 
@@ -50,7 +52,9 @@ public class SpacebrewClient : MonoBehaviour
     {
         public string name;
         public type subType;
+#if UNITY_EDITOR
         [SBCustomType("subType", false)]
+#endif
         public string customType;
         public SpacebrewMessageEvent onReceived;
 
