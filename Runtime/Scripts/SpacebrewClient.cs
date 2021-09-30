@@ -7,6 +7,10 @@ using System.Reflection;
 using SimpleJSON;
 using UnityEngine.Events;
 
+#if UNITY_EDITOR
+using Spacebrew.Editor;
+#endif
+
 public class SpacebrewClient : MonoBehaviour
 {
 
