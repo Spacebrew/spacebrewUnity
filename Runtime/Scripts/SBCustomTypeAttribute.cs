@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿#if UNITY_EDITOR
+using UnityEngine;
 using System;
 using System.Collections;
 
@@ -20,6 +21,4 @@ public class SBCustomTypeAttribute : PropertyAttribute
     }
 
 }
-
-
-
+#endif
