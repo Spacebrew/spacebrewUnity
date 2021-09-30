@@ -1,6 +1,8 @@
 {
     "name": "Spacebrew.Editor",
     "references": [
+        "Runtime",
+        "Runtime.Scripts"
     ],
     "includePlatforms": [
         "Editor"

@@ -1,7 +1,6 @@
 {
-    "name": "Spacebrew",
+    "name": "Spacebrew.Runtime",
     "references": [
-        "Runtime",
         "Scripts"
     ],
     "includePlatforms": [],
